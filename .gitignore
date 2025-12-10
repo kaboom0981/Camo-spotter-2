@@ -22,3 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# --- Python / Backend ---
+backend/venv/
+backend/__pycache__/
+backend/models/__pycache__/
+backend/**/__pycache__/
+
+# Ignore model weights
+backend/weights/*.pth
+
+# Ignore accidental duplicate folder
+backend - Copy/
+
+# Ignore dataset folder
+datasets/
+
+# Temporary files
+*.pyc
+*.pyo
+*.pyd
+*.log

@@ -1,4 +1,0 @@
-project_id = "jruphwtjwwdkaupxmfrj"
-
-[functions.analyze-camouflage]
-verify_jwt = false

@@ -1,15 +1,18 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import Navigation from '@/components/Navigation';
-import ImageUpload from '@/components/ImageUpload';
-import RadarScanner from '@/components/RadarScanner';
-import AnalysisResults from '@/components/AnalysisResults';
+import React from "react";
+
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import Navigation from "@/components/Navigation";
+import ImageUpload from "@/components/ImageUpload";
+import RadarScanner from "@/components/RadarScanner";
+import AnalysisResults from "@/components/AnalysisResults";
+
 
 const Detect = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
@@ -21,27 +24,37 @@ const Detect = () => {
   };
 
   const analyzeImage = async () => {
-    if (!selectedFile || !imagePreview) return;
+    if (!selectedFile) return;
 
     setIsAnalyzing(true);
+
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-camouflage', {
-        body: { image: imagePreview },
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      // 🔥 CALL TO FASTAPI BACKEND
+      const response = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        body: formData,
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error("Backend returned an error");
+      }
 
-      setAnalysisData(data);
+      const result = await response.json();
+      setAnalysisData(result);
+
       toast({
-        title: 'Analysis Complete',
-        description: 'Camouflage detection finished successfully',
+        title: "Analysis Complete",
+        description: "Detection finished successfully!",
       });
-    } catch (error) {
-      console.error('Analysis error:', error);
+    } catch (err) {
+      console.error("Analysis error:", err);
       toast({
-        title: 'Analysis Failed',
-        description: 'An error occurred during analysis. Please try again.',
-        variant: 'destructive',
+        title: "Analysis Failed",
+        description: "Something went wrong. Try again.",
+        variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
@@ -64,12 +77,12 @@ const Detect = () => {
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Upload an image and let our AI reveal hidden wildlife through advanced pattern recognition
+                Upload an image and let our AI reveal hidden wildlife through advanced pattern recognition.
               </p>
             </div>
 
             {/* Upload Section */}
-            <ImageUpload 
+            <ImageUpload
               onImageSelect={handleImageSelect}
               isAnalyzing={isAnalyzing}
             />
@@ -83,17 +96,14 @@ const Detect = () => {
                   disabled={isAnalyzing}
                   className="bg-gradient-hero hover:shadow-glow-primary transition-all duration-300 hover:scale-105 text-lg px-12 py-6"
                 >
-                  {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
+                  {isAnalyzing ? "Analyzing..." : "Analyze Image"}
                 </Button>
               </div>
             )}
 
-            {/* Results Section */}
+            {/* Results */}
             {analysisData && (
-              <AnalysisResults 
-                data={analysisData}
-                imagePreview={imagePreview}
-              />
+              <AnalysisResults data={analysisData} imagePreview={imagePreview} />
             )}
           </div>
         </div>

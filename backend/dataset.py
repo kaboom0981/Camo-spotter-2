@@ -7,23 +7,31 @@ from torch.utils.data import Dataset
 import torchvision.transforms as T
 
 class COD10KDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, target_size=352):
+    def __init__(self, image_dir, mask_dir, target_size=352, max_samples=None):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.target_size = target_size
 
-        self.images = sorted([
-            f for f in os.listdir(image_dir) 
+        images = sorted([
+            f for f in os.listdir(image_dir)
             if f.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
 
-        self.masks = sorted([
-            f for f in os.listdir(mask_dir) 
+        masks = sorted([
+            f for f in os.listdir(mask_dir)
             if f.lower().endswith(('.png', '.jpg', '.jpeg'))
         ])
 
-        assert len(self.images) == len(self.masks), \
+        assert len(images) == len(masks), \
             "❌ Number of images and masks do not match!"
+
+        # Optionally use only first N samples (speed!)
+        if max_samples is not None:
+            images = images[:max_samples]
+            masks = masks[:max_samples]
+
+        self.images = images
+        self.masks = masks
 
         self.img_transform = T.Compose([
             T.Resize((target_size, target_size)),
@@ -52,6 +60,6 @@ class COD10KDataset(Dataset):
         mask = mask.resize((self.target_size, self.target_size), Image.NEAREST)
         mask = np.array(mask, dtype=np.float32)
         mask = (mask > 127).astype(np.float32)
-        mask = torch.from_numpy(mask).unsqueeze(0)
+        mask = torch.from_numpy(mask).unsqueeze(0)  # [1,H,W]
 
         return img, mask

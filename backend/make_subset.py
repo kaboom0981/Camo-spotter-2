@@ -1,37 +1,54 @@
-# backend/make_subset.py
 import os
 import random
 import shutil
 
-FULL_IMAGES = "datasets/COD10K_full/Images"
-FULL_GT = "datasets/COD10K_full/GT"
+FULL_IMAGES = r"D:\Camo spotter 3\camo-spotter-2\datasets\COD10K_full\Train\Images"
+FULL_GT     = r"D:\Camo spotter 3\camo-spotter-2\datasets\COD10K_full\Train\GT_Object"
 
-SUBSET_DIR = "datasets/COD10K_subset"
+SUBSET_DIR = r"D:\Camo spotter 3\camo-spotter-2\datasets\COD10K_subset"
 SUBSET_IMAGES = os.path.join(SUBSET_DIR, "Images")
 SUBSET_GT = os.path.join(SUBSET_DIR, "GT")
-N = 500  # number of images to pick
 
 os.makedirs(SUBSET_IMAGES, exist_ok=True)
 os.makedirs(SUBSET_GT, exist_ok=True)
 
-all_images = [f for f in os.listdir(FULL_IMAGES) 
-              if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+N = 500
+
+# list all images
+all_images = [
+    f for f in os.listdir(FULL_IMAGES)
+    if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+]
 
 random.seed(42)
-selected = random.sample(all_images, N)
+random.shuffle(all_images)
 
 count = 0
-for fname in selected:
-    img_path = os.path.join(FULL_IMAGES, fname)
-    mask_path = os.path.join(FULL_GT, fname)
 
-    # Ensure mask exists with same name
-    if not os.path.exists(mask_path):
-        continue
+gt_files = set(os.listdir(FULL_GT))  # IMPORTANT: fast lookup!
 
-    shutil.copy(img_path, os.path.join(SUBSET_IMAGES, fname))
-    shutil.copy(mask_path, os.path.join(SUBSET_GT, fname))
+for img in all_images:
+    if count >= N:
+        break
+
+    name, ext = os.path.splitext(img)
+
+    # masks may be .png OR .jpg
+    possible_masks = [name + ".png", name + ".jpg"]
+
+    mask = None
+    for pm in possible_masks:
+        if pm in gt_files:
+            mask = pm
+            break
+
+    if mask is None:
+        continue  # mask not found → skip!
+
+    # copy both files
+    shutil.copy(os.path.join(FULL_IMAGES, img), SUBSET_IMAGES)
+    shutil.copy(os.path.join(FULL_GT, mask), SUBSET_GT)
+
     count += 1
 
-print(f"✅ Subset created: {count} image-mask pairs.")
-print(f"Saved in: {SUBSET_DIR}")
+print(f"Subset created: {count} image-mask pairs.")
